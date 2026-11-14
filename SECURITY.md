@@ -50,7 +50,7 @@ GitHub Pages and Supabase keep standard request logs, which include IP addresses
 ## What talks to what
 
 ```
-phone / laptop ──HTTPS──▶ caesarm-23.github.io      (the page, app.js, fonts, libraries)
+phone / laptop ──HTTPS──▶ pitchthis.github.io        (the page, app.js, fonts, libraries)
               ──HTTPS──▶ knvaszzjraveyjwnxlhs.supabase.co   (load and save a game)
               ──WSS────▶ knvaszzjraveyjwnxlhs.supabase.co   (live updates for the room)
 ```
@@ -86,7 +86,7 @@ This is built for a friendly room, not adversarial play:
 
 ## Check it yourself
 
-1. **Network:** open DevTools → Network while playing. You should only see `caesarm-23.github.io` and `knvaszzjraveyjwnxlhs.supabase.co`.
+1. **Network:** open DevTools → Network while playing. You should only see `pitchthis.github.io` and `knvaszzjraveyjwnxlhs.supabase.co`.
 2. **Code:** all game logic is in `app.js`. The page is `index.html`. The server setup is `supabase/schema.sql`.
 3. **Libraries:** `vendor/` holds unmodified files from the official npm packages, and `index.html` pins each one by SHA-384 hash, so the browser refuses a changed file. To compare them with npm:
 

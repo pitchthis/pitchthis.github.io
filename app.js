@@ -467,7 +467,7 @@ function landingHTML(){
     <div class="card"><div class="eyebrow">On the TV</div><p class="muted" style="margin:0">Start a room on the big screen everyone can see. Players join by scanning its code. No accounts needed.</p>
       ${net?.isHost?`<button class="btn primary big" data-p="host">Resume hosting room ${esc(net.code)}</button>`:''}
       <button class="btn big" data-p="hostnew" ${SB?'':'disabled'}>Host a new game</button></div>
-    <p class="note" style="text-align:center">No accounts or tracking. Games are deleted after 24 hours. <a href="https://github.com/caesarm-23/pitch-this/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security &amp; privacy</a></p>
+    <p class="note" style="text-align:center">No accounts or tracking. Games are deleted after 24 hours. <a href="https://github.com/pitchthis/pitchthis.github.io/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security &amp; privacy</a></p>
   </div>`;
 }
 
