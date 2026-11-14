@@ -196,8 +196,10 @@ const PITCH_SECS = 180;
 const EMOJI = ['🔥','🤑','😂','🤯','🙄','💤'];
 const COLORS = ['#ff6b57','#7c5cff','#2f7dff','#14b37d','#f4b73a','#ff9ec0','#7fd3ff','#b8e45c','#ff8f3d','#c58cff','#5ce1e6','#ffd166'];
 
-/* ---------- content pack ---------- */
-const PACK = [
+/* ---------- content packs ---------- */
+// Each company is [name, slogan] with an optional [logo color, accent]; packs without colors take them from their palette.
+const PACKS = {
+  classic:{name:'Classic', list:[
   ['Snaccident','Oops, all flavor.',['#ff6b57','#f4b73a']],
   ['Grandma-as-a-Service','Love, delivered on demand.',['#7c5cff','#ff9ec0']],
   ['CloudSock','Walk on the cloud.',['#2f7dff','#7fd3ff']],
@@ -218,7 +220,59 @@ const PACK = [
   ['PuddleHop','Premium puddles near you.',['#1971c2','#a5d8ff']],
   ['Couchsurfr','Your couch, monetized.',['#a61e4d','#fcc2d7']],
   ['Socksmith','Artisanal mismatched pairs.',['#0b7285','#ffd43b']],
-];
+  ]},
+  food:{name:'Food & Drink', pal:[['#e8590c','#ffd8a8'],['#c92a2a','#ffc9c9'],['#f08c00','#fff3bf'],['#2f9e44','#d3f9d8'],['#862e9c','#f3d9fa']], list:[
+    ['Brunchify','Mimosas as a service.'],['Crumbtrail','Never lose a snack again.'],['SaladDays','Lettuce change the world.'],
+    ['Spicenet','The internet, but hotter.'],['Leftoverly',"Yesterday's dinner, tomorrow's IPO."],['Brinery','Everything tastes better pickled.'],
+    ['NoodleNoodle','Slurp responsibly.'],['Waffle Labs','Crispy outside, disruptive inside.'],['TacoTuesday+','Every day is Tuesday now.'],
+    ['Sproutly','Microgreens, macro dreams.'],['FondueMe','Dip into the future.'],['Kombucha Club','Fizz with purpose.'],
+    ['Crustworthy','Pizza you can trust.'],['Sipster','Coffee for people who skip coffee.'],['Gravy Train','All aboard the sauce.'],
+    ['Bagelchain','Every schmear, verified.'],['Mealworm Market','Protein, but crunchy.'],['Spoonfed','Meals that eat themselves.'],
+    ['Ice Ice Bay','Artisanal ice, hand-carved.'],['Snackrobat','Snacks that do flips.']]},
+  pets:{name:'Pets & Animals', pal:[['#f08c00','#ffe8cc'],['#5c940d','#e9fac8'],['#1971c2','#d0ebff'],['#a61e4d','#ffdeeb'],['#495057','#f1f3f5']], list:[
+    ['Pawpal',"Your dog's professional network."],['Meowmentum','Cats that get things done.'],['Fetchly',"We throw it so you don't have to."],
+    ['Hamsterwheel Energy','Clean power, tiny legs.'],['Goatyoga','Namastay on the goat.'],['Purrfect Match','Dating, for cats.'],
+    ['BirdBnB','Short stays for long flights.'],['Llama Drop','Same-day spit delivery.'],['Fishfluencer','Small tank, big following.'],
+    ['Woofware','Software your dog can use.'],['Snailmail Pro','Slow and steady wins delivery.'],['Ferret Fiber','Internet that sneaks everywhere.'],
+    ['Turtletech','Built to last 150 years.'],['FurSight TV','Binge-watching for bored pets.'],['Squirrel Savings','Hide your nuts for retirement.'],
+    ['Parrot Assist','The assistant that repeats you.'],['Horse Sense','Advice, straight from the stable.'],['Cowworking','Office space with a moo view.'],
+    ['Hiss & Tell','Gossip for reptiles.'],['Ducktape','Holds your pond together.']]},
+  tech:{name:'Tech & AI', pal:[['#2f7dff','#a5d8ff'],['#7048e8','#d0bfff'],['#0ca678','#c3fae8'],['#1c7ed6','#ffe066'],['#e64980','#ffdeeb']], list:[
+    ['Blockbuddy',"A blockchain that's also your friend."],['Cloudnine','We put your feelings in the cloud.'],['Promptly',"AI that's always late."],
+    ['Bytesize','Snackable software.'],['Glitchcraft','Bugs, but on purpose.'],['Wi-Fly','Internet on a drone, right above you.'],
+    ['Passwordle','Guess your own password daily.'],['Robonanny','Bedtime stories, now with firmware.'],['Algorhythm','Music picked by math.'],
+    ['Metaverse Mall','Shop till your headset drops.'],['Quantum Toast','Burnt and not burnt at once.'],['SmartSpoon','Your spoon knows what you ate.'],
+    ['Unplugd','An app for using fewer apps.'],['Deepfake Dad','Dad jokes on demand.'],['Captchapp','Prove you are human, for fun.'],
+    ['Holo-Host',"Throw parties you don't attend."],['Loadingbar','We make waiting beautiful.'],['Emailicious','Inbox zero, flavor one.'],
+    ['Ctrl-Zen','Undo your stress.'],['Dronut','Donuts, delivered by drone.']]},
+  fitness:{name:'Health & Fitness', pal:[['#f03e3e','#ffe3e3'],['#0ca678','#c3fae8'],['#f59f00','#fff3bf'],['#4263eb','#dbe4ff'],['#ae3ec9','#f3d9fa']], list:[
+    ['Sweatshare','Sweat now, invest later.'],['Stretchly','Flexibility, quarterly.'],['Napnasium','The gym where you sleep.'],
+    ['Plankton','One-minute planks, for life.'],['Kalebrate','Celebrate every leaf.'],['Hydrajudge','A water bottle that judges you.'],
+    ['StepUp Socks','Socks that count your steps.'],['Zenbox','Meditation in a shipping container.'],['Yogurt Yoga','Stretch, then snack.'],
+    ['Lift Off','Weightlifting on the moon.'],['Pulsepal','Your heartbeat, but social.'],['Cardio Karaoke','Sing until you sweat.'],
+    ['Breathe.io','Inhale. Exhale. Subscribe.'],['Sleepcoin','Earn crypto while you snore.'],['Posture Police',"Sit up. We're watching."],
+    ['Trailmix Trainer',"A coach who's all snacks."],['Vitamindz','Supplements for the mind.'],['Burpee Bank','Deposit reps, withdraw abs.'],
+    ['Couch to Kayak','From sofa to sea in 30 days.'],['Sauna Sound','Podcasts for people in saunas.']]},
+  home:{name:'Home & Life', pal:[['#1098ad','#c5f6fa'],['#d6336c','#ffdeeb'],['#5c940d','#e9fac8'],['#e67700','#fff3bf'],['#5f3dc4','#e5dbff']], list:[
+    ['Laundrone','Folding clothes from above.'],['Mowbot','Your lawn, on autopilot.'],['Chorely','Chores, gamified.'],
+    ['Sockmate','We find the missing one.'],['Roomie Rater','Reviews for roommates.'],['Doorbell Diaries','Every visitor, narrated.'],
+    ['Plantsitter','Babysitting for your ferns.'],['Fridge Poetry','Groceries that rhyme.'],['Couch Potato Co.','Furniture that never lets you leave.'],
+    ['Dishwizard','Magic for dirty plates.'],['Clutterless','We hide your stuff for you.'],['Rent-a-Grandpa','Wisdom, by the hour.'],
+    ['Nap Pod Home','A cocoon for your living room.'],['Mailmood','Bills that apologize.'],['Lightbulb Moments','Lamps that have ideas.'],
+    ['Keyfinder','Your keys, forever found.'],['BlanketFort','Fort-building kits for adults.'],['Tidy Tiger','Cleaning, with a roar.'],
+    ['Porch Guardian','Packages that bite back.'],['Bedtimes','The news, read in a soothing voice.']]},
+  spooky:{name:'Spooky & Weird', pal:[['#5f3dc4','#d0bfff'],['#2b8a3e','#b2f2bb'],['#e8590c','#ffd8a8'],['#212529','#ced4da'],['#c2255c','#fcc2d7']], list:[
+    ['Hauntify','Find a ghost for your home.'],['Cryptid Cab','Rides from Bigfoot himself.'],['Witchcraft Brewery','Potions with a 5-star rating.'],
+    ['Vampire Dental','Fangs, whitened.'],['Ouija Online','The spirits are typing…'],['Zombie Cardio',"Run like they're right behind you."],
+    ['Moonlighting','Night jobs for werewolves.'],['Alien Airbnb','Abductions, now bookable.'],['Crystal Clear','Fortune-telling, with a warranty.'],
+    ['Mummy Wrap','Gift wrapping, ancient style.'],['Gravesite Wi-Fi','Stay connected forever.'],['Poltergeist Pro','We move your furniture for you.'],
+    ['Swampthing Spa','Mud baths, straight from the bog.'],['Tarot Taxi',"We know where you're going."],['Skeleton Crew','Staffing, bare bones.'],
+    ['Bat Signal','Text alerts for vampires.'],['Fog Machine','Mystery, on tap.'],['Cursed Candles','Smells amazing. Mostly safe.'],
+    ['Haunted Takeout','Dinner that follows you home.'],['Area 52','One better than 51.']]},
+};
+const ALL_COS = Object.values(PACKS).flatMap(pk=>pk.list.map(([co,tag,c],i)=>({co,tag,c:c||pk.pal[i%pk.pal.length]})));
+const packCos = key => key==='all' ? ALL_COS : PACKS[key].list.map(([co,tag,c],i)=>({co,tag,c:c||PACKS[key].pal[i%PACKS[key].pal.length]}));
+const packName = key => key==='all' ? `Everything (${ALL_COS.length})` : `${PACKS[key].name} (${PACKS[key].list.length})`;
 
 const STEPS = [
   {i:'📱', t:'Join the game', d:'Scan the code with your phone and pick a side: Founder or Investor.',
@@ -348,7 +402,7 @@ function banner(msg){ const b=$('#banner'); b.textContent=msg||''; b.hidden=!msg
 
 /* ---------- host logic ---------- */
 function newGame(){
-  return {v:1, host:PID, round:0, phase:'lobby', tut:0, players:{}, order:[], cos:{}, usedCos:[], cur:0, slide:0, qa:false,
+  return {v:1, host:PID, round:0, phase:'lobby', tut:0, players:{}, order:[], cos:{}, pack:'all', cur:0, slide:0, qa:false,
     clock:{left:PITCH_SECS,endsAt:null}, qs:{}, alloc:{}, res:null};
 }
 let writing=false, dirty=false;
@@ -409,9 +463,13 @@ function startRound(){
   const here=presentPids();
   const founders=Object.keys(H.players).filter(p=>H.players[p].role==='founder'&&here.has(p));
   H.round+=1; H.order=founders.sort(()=>Math.random()-.5);
-  let pool=PACK.map((_,i)=>i).filter(i=>!H.usedCos.includes(i)); if(pool.length<founders.length){ H.usedCos=[]; pool=PACK.map((_,i)=>i) }
+  // this screen remembers every company it has dealt, across games, so nothing repeats until the theme runs dry
+  const all=packCos(H.pack||'all'); let seenCos=new Set(JSON.parse(sget('localStorage','pt-seen-cos')||'[]'));
+  let pool=all.filter(c=>!seenCos.has(c.co));
+  if(pool.length<founders.length){ all.forEach(c=>seenCos.delete(c.co)); pool=all.slice() }
   pool.sort(()=>Math.random()-.5);
-  H.cos={}; founders.forEach((pid,k)=>{ const i=pool[k], [co,tag,c]=PACK[i]; H.usedCos.push(i); H.cos[pid]={co,tag,c,seed:1+Math.floor(Math.random()*9999)} });
+  H.cos={}; founders.forEach((pid,k)=>{ const {co,tag,c}=pool[k]; seenCos.add(co); H.cos[pid]={co,tag,c,seed:1+Math.floor(Math.random()*9999)} });
+  sset('localStorage','pt-seen-cos',JSON.stringify([...seenCos]));
   Object.assign(H,{phase:'pitch',cur:0,slide:0,qa:false,clock:{left:PITCH_SECS,endsAt:null},qs:{},alloc:{},res:null});
   for(const k in live) delete live[k];
   commit();
@@ -467,7 +525,8 @@ function tvHTML(st){
     const q=qrSvg(joinUrl());
     return `<div class="tv-lobby"><div><h2>Pitch <span>This</span></h2>
       ${q?`<div class="qr">${q}</div>`:''}
-      <div class="join">Scan to join, or open the link and enter code<div class="code">${esc(net?.code)}</div><b>${esc(baseUrl())}</b></div></div>
+      <div class="join">Scan to join, or open the link and enter code<div class="code">${esc(net?.code)}</div><b>${esc(baseUrl())}</b></div>
+      <div class="join">Theme: <b style="display:inline;font-family:var(--body);font-size:1.8cqw">${esc(PACKS[st.pack]?.name||'Everything')}</b></div></div>
       <div class="roster"><div><h3>Founders</h3>${col('founder')}</div><div><h3>Investors</h3>${col('investor')}</div></div></div>`;
   }
   if(st.phase==='howto'){
@@ -504,7 +563,9 @@ function hostBarHTML(st){
   const c=readyCounts();
   const B=(act,label,cls='',dis=false)=>`<button class="btn ${cls}" data-h="${act}" ${dis?'disabled':''}>${label}</button>`;
   let mid='';
-  if(st.phase==='lobby') mid=`<span class="chip">${c.f} founders · ${c.i} investors here</span>${B('howto','How to play')}${B('start','Start the pitches','primary')}`;
+  if(st.phase==='lobby') mid=`<label class="chip on" style="display:flex;gap:6px;align-items:center">Theme
+      <select id="pack" aria-label="Theme pack" style="font:inherit;background:transparent;color:var(--ink);border:0">${['all',...Object.keys(PACKS)].map(k=>`<option value="${k}" ${k===(st.pack||'all')?'selected':''}>${packName(k)}</option>`).join('')}</select></label>
+    <span class="chip">${c.f} founders · ${c.i} investors here</span>${B('howto','How to play')}${B('start','Start the pitches','primary')}`;
   if(st.phase==='howto') mid=`${B('tutBack','Back')}${B('tutNext',st.tut<STEPS.length-1?'Next':'Start the pitches','primary')}${B('start','Skip tutorial','ghost')}`;
   if(st.phase==='pitch'){
     const last=st.cur>=st.order.length-1;
@@ -601,7 +662,8 @@ function renderAll(){
     if(!$('.screen')) app.innerHTML=`<div class="hostwrap"><div class="stagebox"><div class="screen" id="tv"></div></div><div id="hbar"></div></div>`;
     $('#tv').querySelectorAll(':scope > :not(.float)').forEach(n=>n.remove());
     $('#tv').insertAdjacentHTML('afterbegin',tvHTML(st));
-    $('#hbar').innerHTML=hostBarHTML(st);
+    // leave the bar alone while the theme menu is open, or the redraw would close it
+    if(document.activeElement?.id!=='pack') $('#hbar').innerHTML=hostBarHTML(st);
   } else if(view==='player'){
     app.innerHTML=`<div class="phone">${phoneHTML(st)}</div>`;
   } else app.innerHTML=landingHTML();
@@ -641,7 +703,8 @@ document.addEventListener('input',e=>{
   const lf=document.querySelector('.left .money'); if(lf) lf.textContent=money((100-used(myA))*1e4);
 });
 
-document.addEventListener('change',e=>{ if(pendingRender&&e.target.matches('input[type=range]')){ e.target.blur(); renderAll() } });
+document.addEventListener('change',e=>{ if(e.target.id==='pack'&&H){ H.pack=PACKS[e.target.value]?e.target.value:'all'; e.target.blur(); commit(); return }
+  if(pendingRender&&e.target.matches('input[type=range]')){ e.target.blur(); renderAll() } });
 
 /* ---------- rooms ---------- */
 const params=new URLSearchParams(location.search);
