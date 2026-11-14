@@ -314,6 +314,7 @@ const hostAct = {
   lobby(){ Object.assign(H,{phase:'lobby',res:null}); commit() },
   kick(pid){ delete H.players[pid]; commit() },
   reset(){ if(confirm('Clear every player and start over?')){ H=newGame(); commit() } },
+  music(){ Music.toggle(); renderAll() },
   full(){ try{ const el=document.documentElement; (document.fullscreenElement?document.exitFullscreen():el.requestFullscreen?.())?.catch?.(()=>{}) }catch(e){} },
 };
 setInterval(()=>{
@@ -327,6 +328,80 @@ function floatEmoji(e){
   const el=document.createElement('div'); el.className='float'; el.textContent=e;
   el.style.left=(8+Math.random()*80)+'%'; scr.appendChild(el); setTimeout(()=>el.remove(),2700);
 }
+
+/* ---------- lobby music ---------- */
+// A short game-show loop synthesized in the browser (no audio files), played on the TV only
+// while people are joining. It fades out when the pitches start.
+const Music = (()=>{
+  const BPM=112, E=60/BPM/2;                      // one eighth note, in seconds
+  const hz = m => 440*Math.pow(2,(m-69)/12);      // MIDI note to frequency
+  const CHORDS=[[53,57,60,65],[50,57,62,65],[46,58,62,65],[48,55,60,64]];   // F, Dm, Bb, C
+  const MELODY=[72,0,69,72,77,0,76,72, 74,0,72,69,65,0,69,72, 70,0,74,77,74,0,72,70, 72,0,67,72,76,0,79,0,
+                77,0,76,77,72,0,69,0, 74,76,77,74,69,0,72,0, 70,72,74,77,79,0,77,74, 76,0,72,0,67,0,0,0];
+  let ctx=null, master=null, noiseBuf=null, timer=null, step=0, nextT=0, playing=false, offAt=null;
+  let muted = sget('localStorage','pt-music')==='off';
+  // must run inside a click: browsers only allow sound after the viewer interacts
+  function unlock(){
+    try{
+      if(!ctx){
+        ctx=new (window.AudioContext||window.webkitAudioContext)();
+        master=ctx.createGain(); master.gain.value=0;
+        const comp=ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
+        noiseBuf=ctx.createBuffer(1,ctx.sampleRate*0.3,ctx.sampleRate);
+        const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+      }
+      if(ctx.state==='suspended') ctx.resume();
+    }catch(e){ ctx=null }
+  }
+  function tone(type,freq,t,dur,vol,cut){
+    const o=ctx.createOscillator(), g=ctx.createGain(); o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    let out=o; if(cut){ const f=ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=cut; o.connect(f); out=f }
+    out.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.02);
+  }
+  function noise(t,dur,vol,hp){
+    const n=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); n.buffer=noiseBuf;
+    f.type='highpass'; f.frequency.value=hp; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t+dur+0.02);
+  }
+  function kick(t){
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(45,t+0.15);
+    g.gain.setValueAtTime(0.55,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.2);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.22);
+  }
+  function play(s,t){
+    const e=s%8, ch=CHORDS[Math.floor(s/8)%4];
+    if([0,3,4,6].includes(e)) tone('triangle',hz(ch[0]-12),t,E*0.9,0.32);           // bass
+    if(e%2===1) ch.slice(1).forEach(n=>tone('square',hz(n),t,E*0.6,0.03,1800));       // offbeat chord stabs
+    const m=MELODY[s%MELODY.length]; if(m) tone('triangle',hz(m),t,E*1.6,0.11);        // melody
+    if(e===0||e===4) kick(t);
+    if(e===2||e===6) noise(t,0.12,0.1,1500);                                             // clap
+    if(e%2===1) noise(t,0.04,0.04,7000);                                                 // hi-hat
+  }
+  function tick(){ while(nextT<ctx.currentTime+0.15){ play(step,nextT); nextT+=E; step++ } }
+  function start(){
+    if(!ctx||playing) return; playing=true; clearTimeout(offAt);
+    if(ctx.state==='suspended') ctx.resume();
+    if(!timer){ step=0; nextT=ctx.currentTime+0.05; timer=setInterval(tick,25) }
+    master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value,ctx.currentTime);
+    master.gain.linearRampToValueAtTime(0.22,ctx.currentTime+1.5);
+  }
+  function stop(){
+    if(!ctx||!playing) return; playing=false;
+    master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value,ctx.currentTime);
+    master.gain.linearRampToValueAtTime(0,ctx.currentTime+1.2);
+    offAt=setTimeout(()=>{ clearInterval(timer); timer=null; ctx.suspend() },1400);
+  }
+  return {
+    unlock,
+    get muted(){ return muted },
+    toggle(){ muted=!muted; sset('localStorage','pt-music',muted?'off':'on'); unlock() },
+    // called on every TV redraw: music only while people are gathering, and only if not muted
+    sync(st){ const want = !muted && !!st && (st.phase==='lobby'||st.phase==='howto'); want?start():stop() },
+    stopNow(){ stop() },
+  };
+})();
 
 /* ---------- rendering: TV ---------- */
 const nameOf=(st,pid)=>st.players[pid]?.name||'Someone';
@@ -395,7 +470,8 @@ function hostBarHTML(st){
   if(st.phase==='invest'){ const tot=bettorsOf(st); const n=tot.filter(p=>st.alloc[p]?.locked).length;
     mid=`<span class="chip ${n===tot.length?'done':''}">${n} of ${tot.length} locked in</span>${B('reveal','Reveal results','primary')}` }
   if(st.phase==='reveal') mid=`<span class="chip on">Everyone resets to $1M</span>${B('again','Next round','primary')}${B('lobby','Back to lobby')}`;
-  return `<div class="bar">${B('full','⛶ Full screen','ghost')}<span class="sp"></span>${mid}<span class="sp"></span>
+  const music=(st.phase==='lobby'||st.phase==='howto')?B('music',Music.muted?'♪ Music off':'♪ Music on','ghost'):'';
+  return `<div class="bar">${B('full','⛶ Full screen','ghost')}${music}<span class="sp"></span>${mid}<span class="sp"></span>
     ${st.phase==='lobby'?B('reset','Reset game','ghost'):''}<span class="chip on">Room ${esc(net.code)}</span></div>`;
 }
 
@@ -477,6 +553,7 @@ function renderAll(){
   if(view==='player'&&document.activeElement?.matches?.('input[type=range]')){ pendingRender=true; return }
   pendingRender=false;
   const qv=$('#qtext')?.value, nv=$('#nm')?.value, focused=document.activeElement?.id;
+  if(view==='host'&&st) Music.sync(st); else Music.stopNow();
   if(view==='host'&&st){
     if(!$('.screen')) app.innerHTML=`<div class="hostwrap"><div class="stagebox"><div class="screen" id="tv"></div></div><div id="hbar"></div></div>`;
     $('#tv').querySelectorAll(':scope > :not(.float)').forEach(n=>n.remove());
@@ -496,8 +573,8 @@ document.addEventListener('click',e=>{
   const h=e.target.closest('[data-h]'); if(h&&H){ const [a,arg]=h.dataset.h.split(':'); hostAct[a]?.(arg); return }
   const b=e.target.closest('[data-p]'); if(!b) return; const p=b.dataset.p;
   if(p==='role'){ e.preventDefault(); me.role=b.dataset.r; sset('localStorage','pt-role',me.role); if(view==='player') net.presence({role:me.role}); renderAll() }
-  if(p==='hostnew'){ hostNew(); return }
-  if(p==='host'){ view='host'; net.presence({host:true,pid:null,name:null});
+  if(p==='hostnew'){ Music.unlock(); hostNew(); return }
+  if(p==='host'){ Music.unlock(); view='host'; net.presence({host:true,pid:null,name:null});
     H = S && S.v===1 ? clone(S) : newGame(); H.host=PID; commit() }
   if(p==='emo'){ const now=Date.now(); if(now-lastEmo<350) return; lastEmo=now; emoN++; net.presence({emo:{e:b.dataset.e,n:emoN,t:now}}) }
   if(p==='nav'){ navN++; net.presence({nav:{i:S.slide+(+b.dataset.d),n:navN}}) }
