@@ -314,7 +314,7 @@ const hostAct = {
   lobby(){ Object.assign(H,{phase:'lobby',res:null}); commit() },
   kick(pid){ delete H.players[pid]; commit() },
   reset(){ if(confirm('Clear every player and start over?')){ H=newGame(); commit() } },
-  music(){ Music.toggle(); renderAll() },
+  music(){ if(Music.blocked) Music.unlock(); else Music.toggle(); renderAll() },
   full(){ try{ const el=document.documentElement; (document.fullscreenElement?document.exitFullscreen():el.requestFullscreen?.())?.catch?.(()=>{}) }catch(e){} },
 };
 setInterval(()=>{
@@ -343,8 +343,11 @@ const Music = (()=>{
   // must run inside a click: browsers only allow sound after the viewer interacts
   function unlock(){
     try{
+      // play through the iPhone/iPad silent switch, like a video would
+      try{ if(navigator.audioSession) navigator.audioSession.type='playback' }catch(e){}
       if(!ctx){
         ctx=new (window.AudioContext||window.webkitAudioContext)();
+        ctx.onstatechange=()=>{ if(H) renderAll() };
         master=ctx.createGain(); master.gain.value=0;
         const comp=ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
         noiseBuf=ctx.createBuffer(1,ctx.sampleRate*0.3,ctx.sampleRate);
@@ -396,6 +399,8 @@ const Music = (()=>{
   return {
     unlock,
     get muted(){ return muted },
+    // true when the music should be playing but the browser is holding sound back until a click
+    get blocked(){ return !muted && playing && (!ctx || ctx.state!=='running') },
     toggle(){ muted=!muted; sset('localStorage','pt-music',muted?'off':'on'); unlock() },
     // called on every TV redraw: music only while people are gathering, and only if not muted
     sync(st){ const want = !muted && !!st && (st.phase==='lobby'||st.phase==='howto'); want?start():stop() },
@@ -470,7 +475,7 @@ function hostBarHTML(st){
   if(st.phase==='invest'){ const tot=bettorsOf(st); const n=tot.filter(p=>st.alloc[p]?.locked).length;
     mid=`<span class="chip ${n===tot.length?'done':''}">${n} of ${tot.length} locked in</span>${B('reveal','Reveal results','primary')}` }
   if(st.phase==='reveal') mid=`<span class="chip on">Everyone resets to $1M</span>${B('again','Next round','primary')}${B('lobby','Back to lobby')}`;
-  const music=(st.phase==='lobby'||st.phase==='howto')?B('music',Music.muted?'♪ Music off':'♪ Music on','ghost'):'';
+  const music=(st.phase==='lobby'||st.phase==='howto')?B('music',Music.blocked?'♪ Tap for music':Music.muted?'♪ Music off':'♪ Music on',Music.blocked?'primary':'ghost'):'';
   return `<div class="bar">${B('full','⛶ Full screen','ghost')}${music}<span class="sp"></span>${mid}<span class="sp"></span>
     ${st.phase==='lobby'?B('reset','Reset game','ghost'):''}<span class="chip on">Room ${esc(net.code)}</span></div>`;
 }
